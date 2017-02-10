@@ -1,0 +1,46 @@
+version: '2'
+services:
+
+  influxdb:
+    container_name: influxdb
+    image: influxdb:latest
+    ports:
+      - "8083:8083"
+      - "8086:8086"
+    environment:
+      INFLUXDB_DATA_ENGINE: tsm1
+      INFLUXDB_ADMIN_ENABLED: "true"
+
+  telegraf:
+    container_name: telegraf
+    image: telegraf:latest
+    volumes:
+      - ./config/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+    depends_on:
+      - influxdb
+      - grafana
+      - springbootapp
+    links:
+      - influxdb
+
+  grafana:
+    container_name: grafana
+    image: grafana/grafana
+    volumes:
+      - ./config/:/etc/grafana/scripts
+    ports:
+      - "3000:3000"
+    depends_on:
+      - influxdb
+    links:
+      - influxdb
+
+  springbootapp:
+    container_name: springbootapp
+    image: ltlamontagne/spring-boot-app
+    ports:
+      - "8081:8081"
+      - "9001:9001"
+    environment:
+      - JOLOKIA_CONFIG_DEBUG=true
+      - MANAGEMENT_ADDRESS=springbootapp
